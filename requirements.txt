@@ -4,4 +4,3 @@ numpy
 scikit-learn==1.5.0
 tqdm
 xgboost
-os
