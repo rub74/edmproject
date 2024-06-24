@@ -12,6 +12,7 @@ from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import StandardScaler, OneHotEncoder
 from sklearn.impute import SimpleImputer
 from sklearn.ensemble import GradientBoostingRegressor
+import os
 
 
 data = pd.read_csv('listings_redux.csv')
