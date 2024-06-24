@@ -99,9 +99,9 @@ final_chart = (chart + text + price_text).properties(
     strokeWidth=0
 )
 
-# Use columns to align the chart to the left
-col1, col2 = st.columns([3, 1])
-with col1:
+# Use columns to force left alignment
+col1, col2, col3 = st.columns([1, 2, 1])
+with col2:
     st.altair_chart(final_chart, use_container_width=True)
 
 st.info("This bar chart compares the median prices across different neighborhoods. The bars are sorted from highest to lowest median price, allowing you to quickly identify the most expensive and least expensive areas.")
