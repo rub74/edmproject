@@ -5,7 +5,6 @@ import pydeck as pdk
 import altair as alt
 import pickle
 from datetime import datetime, timedelta
-from tqdm import tqdm
 from stqdm import stqdm
 
 
