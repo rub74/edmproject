@@ -65,30 +65,41 @@ n = st.slider('Select the number of neighborhoods:', 5, min(20, len(price_stats_
 # Select the top n neighborhoods
 top_n_df = price_stats_df.head(n)
 
-# Create bar chart with Altair
-base = alt.Chart(top_n_df).encode(
-    y=alt.Y('neighbourhood:N', sort='-x', title='Neighborhood', axis=alt.Axis(labelLimit=200)),
-    x=alt.X('price:Q', title='Median price per night (€)')
-)
+# Add a rank column for y-axis ordering
+top_n_df['rank'] = range(1, len(top_n_df) + 1)
 
-bars = base.mark_bar().encode(
+# Create bar chart with Altair
+chart = alt.Chart(top_n_df).mark_bar().encode(
+    y=alt.Y('rank:O', axis=None, sort='descending'),
+    x=alt.X('price:Q', title='Median price per night (€)'),
     color=alt.Color('price:Q', scale=alt.Scale(scheme='blueorange'), legend=None)
 )
 
-text = base.mark_text(align='left', dx=3).encode(
-    text=alt.Text('price:Q', format='.2f')
+# Add text labels for neighborhood names
+text = alt.Chart(top_n_df).mark_text(align='right', dx=-5, fontSize=12).encode(
+    y=alt.Y('rank:O', sort='descending'),
+    text='neighbourhood',
+    color=alt.value('white')
 )
 
-chart = (bars + text).properties(
+# Add text labels for prices
+price_text = alt.Chart(top_n_df).mark_text(align='left', dx=5, fontSize=12).encode(
+    y=alt.Y('rank:O', sort='descending'),
+    x='price:Q',
+    text=alt.Text('price:Q', format='.2f'),
+    color=alt.value('black')
+)
+
+# Combine the chart elements
+final_chart = (chart + text + price_text).properties(
     title='Median Price by Neighborhood',
     width=600,
     height=max(300, 25 * n)  # Ensure a minimum height and scale with the number of neighborhoods
-).configure_axis(
-    labelFontSize=12,
-    titleFontSize=14
+).configure_view(
+    strokeWidth=0
 )
 
-st.altair_chart(chart, use_container_width=True)
+st.altair_chart(final_chart, use_container_width=True)
 
 st.info("This bar chart compares the median prices across different neighborhoods. The bars are sorted from highest to lowest median price, allowing you to quickly identify the most expensive and least expensive areas.")
 
