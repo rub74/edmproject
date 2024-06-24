@@ -6,6 +6,12 @@ import altair as alt
 import pickle
 from datetime import datetime, timedelta
 from tqdm import tqdm
+import joblib
+from sklearn.compose import ColumnTransformer
+from sklearn.pipeline import Pipeline
+from sklearn.preprocessing import StandardScaler, OneHotEncoder
+from sklearn.impute import SimpleImputer
+from sklearn.ensemble import GradientBoostingRegressor
 
 
 data = pd.read_csv('listings_redux.csv')
@@ -175,7 +181,7 @@ col2.metric(label=f"Minimum Price in {neighbourhood2}", value=f"${min_price2}", 
 # To deserialize estimator later
 
 with open('our_estimator.pkl', 'rb') as fid:
-    pp = pickle.load(fid)
+    pp = joblib.load(fid)
 
 
 st.header('Price prediction for upcoming dates')
