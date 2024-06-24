@@ -5,7 +5,6 @@ import pydeck as pdk
 import altair as alt
 import pickle
 from datetime import datetime, timedelta
-from stqdm import stqdm
 
 
 data = pd.read_csv('listings_redux.csv')
