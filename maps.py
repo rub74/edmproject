@@ -2,17 +2,19 @@ import streamlit as st
 import pandas as pd
 import numpy as np
 import pydeck as pdk
+import plotly.express as px
 import altair as alt
+import matplotlib.pyplot as plt
 import pickle
 from datetime import datetime, timedelta
 from tqdm import tqdm
+from stqdm import stqdm
 import joblib
 from sklearn.compose import ColumnTransformer
 from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import StandardScaler, OneHotEncoder
 from sklearn.impute import SimpleImputer
-from sklearn.ensemble import GradientBoostingRegressor
-import os
+from sklearn.ensemble import GradientBoostingRegressor  # o el modelo que estés usando
 
 
 data = pd.read_csv('listings_redux.csv')
@@ -175,8 +177,6 @@ col1.metric(label=f"Minimum Price in {neighbourhood1}", value=f"${min_price1}")
 
 col2.metric(label=f"Maximum Price in {neighbourhood2}", value=f"${max_price2}", delta=float(price_delta_max), delta_color="inverse")
 col2.metric(label=f"Minimum Price in {neighbourhood2}", value=f"${min_price2}", delta=float(price_delta_min), delta_color="inverse")
-
-
 
 import pandas as pd
 import streamlit as st
