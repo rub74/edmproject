@@ -8,7 +8,6 @@ import matplotlib.pyplot as plt
 import pickle
 from datetime import datetime, timedelta
 from tqdm import tqdm
-from stqdm import stqdm
 import joblib
 from sklearn.compose import ColumnTransformer
 from sklearn.pipeline import Pipeline
