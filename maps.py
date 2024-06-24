@@ -65,47 +65,34 @@ n = st.slider('Select the number of neighborhoods:', 5, min(20, len(price_stats_
 # Select the top n neighborhoods
 top_n_df = price_stats_df.head(n)
 
-# Add a rank column for y-axis ordering
-top_n_df['rank'] = range(1, len(top_n_df) + 1)
-
-# Create bar chart with Altair
+# Create a simple horizontal bar chart
 chart = alt.Chart(top_n_df).mark_bar().encode(
-    y=alt.Y('rank:O', axis=None, sort='descending'),
+    y=alt.Y('neighbourhood:N', sort='-x', title='Neighborhood'),
     x=alt.X('price:Q', title='Median price per night (€)'),
-    color=alt.Color('price:Q', scale=alt.Scale(scheme='blueorange'), legend=None)
-)
-
-# Add text labels for neighborhood names
-text = alt.Chart(top_n_df).mark_text(align='right', dx=-5, fontSize=12).encode(
-    y=alt.Y('rank:O', sort='descending'),
-    text='neighbourhood',
-    color=alt.value('white')
+    color=alt.Color('price:Q', scale=alt.Scale(scheme='blues'), legend=None)
+).properties(
+    title='Median Price by Neighborhood',
+    width=600,
+    height=max(300, 30 * n)  # Adjust height based on number of neighborhoods
 )
 
 # Add text labels for prices
-price_text = alt.Chart(top_n_df).mark_text(align='left', dx=5, fontSize=12).encode(
-    y=alt.Y('rank:O', sort='descending'),
-    x='price:Q',
-    text=alt.Text('price:Q', format='.2f'),
-    color=alt.value('black')
+text = chart.mark_text(
+    align='left',
+    baseline='middle',
+    dx=3  # Nudge text to right so it doesn't appear on top of the bar
+).encode(
+    text=alt.Text('price:Q', format='.2f')
 )
 
-# Combine the chart elements
-final_chart = (chart + text + price_text).properties(
-    title='Median Price by Neighborhood',
-    width=600,
-    height=max(300, 25 * n)  # Ensure a minimum height and scale with the number of neighborhoods
-).configure_view(
-    strokeWidth=0
+# Combine chart and text
+final_chart = (chart + text).configure_axis(
+    labelFontSize=12,
+    titleFontSize=14
 )
 
-# Use columns to force left alignment
-col1, col2, col3 = st.columns([1, 2, 1])
-with col2:
-    st.altair_chart(final_chart, use_container_width=True)
-
-st.info("This bar chart compares the median prices across different neighborhoods. The bars are sorted from highest to lowest median price, allowing you to quickly identify the most expensive and least expensive areas.")
-
+# Display the chart
+st.altair_chart(final_chart, use_container_width=True)
 st.header("Price Analysis by Neighborhood")
 
 # Neighborhood selection
