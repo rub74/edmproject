@@ -243,7 +243,7 @@ if filtered_df is not None:
     future_dates_df = create_features(start_date, end_date, filtered_df)
     airbnb_mean_prices = filtered_df.groupby('listing_id')['price'].mean()
 
-    airbnb_ids = filtered_df['listing_id'].unique()
+    airbnb_ids = filtered_df['listing_id'].unique()[:50]  # Predict only for the first 50 Airbnbs
     future_data = pd.DataFrame()
 
     if st.button("Predict"):
@@ -271,8 +271,53 @@ if filtered_df is not None:
             
             future_data = pd.concat([future_data, airbnb_data], ignore_index=True)
 
-        filtered_data = future_data[['airbnb_id', 'date', 'predicted_price']]
-        st.write(filtered_data)
+        # Calculate average predicted price per day
+        avg_prices = future_data.groupby('date')['predicted_price'].mean().reset_index()
+        
+        # Create line chart
+        chart = alt.Chart(avg_prices).mark_line().encode(
+            x='date:T',
+            y=alt.Y('predicted_price:Q', title='Average Predicted Price (€)'),
+            tooltip=['date', 'predicted_price']
+        ).properties(
+            title=f'Average Predicted Price Trend for {selected_neighborhood}',
+            width=700,
+            height=400
+        )
+
+        st.altair_chart(chart, use_container_width=True)
+
+        # Show top 5 most expensive days
+        top_5_days = avg_prices.nlargest(5, 'predicted_price')
+        st.subheader("Top 5 Most Expensive Days")
+        st.table(top_5_days[['date', 'predicted_price']].set_index('date'))
+
+        # Pagination for individual Airbnb predictions
+        st.subheader("Individual Airbnb Predictions")
+        items_per_page = 10
+        num_pages = len(airbnb_ids) // items_per_page + (1 if len(airbnb_ids) % items_per_page > 0 else 0)
+        page = st.selectbox("Page", range(1, num_pages + 1))
+
+        start_idx = (page - 1) * items_per_page
+        end_idx = start_idx + items_per_page
+
+        for airbnb_id in airbnb_ids[start_idx:end_idx]:
+            airbnb_data = future_data[future_data['airbnb_id'] == airbnb_id]
+            st.write(f"Airbnb ID: {airbnb_id}")
+            
+            # Create line chart for individual Airbnb
+            airbnb_chart = alt.Chart(airbnb_data).mark_line().encode(
+                x='date:T',
+                y=alt.Y('predicted_price:Q', title='Predicted Price (€)'),
+                tooltip=['date', 'predicted_price']
+            ).properties(
+                title=f'Predicted Price Trend for Airbnb {airbnb_id}',
+                width=600,
+                height=200
+            )
+            
+            st.altair_chart(airbnb_chart, use_container_width=True)
+
 else:
     st.warning("Please select a valid neighborhood.")
 
