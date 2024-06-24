@@ -66,14 +66,26 @@ n = st.slider('Select the number of neighborhoods:', 5, min(20, len(price_stats_
 top_n_df = price_stats_df.head(n)
 
 # Create bar chart with Altair
-chart = alt.Chart(top_n_df).mark_bar().encode(
-    y=alt.Y('neighbourhood:N', sort='-x', title='Neighborhood'),
-    x=alt.X('price:Q', title='Median price per night (€)'),
+base = alt.Chart(top_n_df).encode(
+    y=alt.Y('neighbourhood:N', sort='-x', title='Neighborhood', axis=alt.Axis(labelLimit=200)),
+    x=alt.X('price:Q', title='Median price per night (€)')
+)
+
+bars = base.mark_bar().encode(
     color=alt.Color('price:Q', scale=alt.Scale(scheme='blueorange'), legend=None)
-).properties(
+)
+
+text = base.mark_text(align='left', dx=3).encode(
+    text=alt.Text('price:Q', format='.2f')
+)
+
+chart = (bars + text).properties(
     title='Median Price by Neighborhood',
     width=600,
-    height=20 * n  # Adjust height based on the number of neighborhoods
+    height=max(300, 25 * n)  # Ensure a minimum height and scale with the number of neighborhoods
+).configure_axis(
+    labelFontSize=12,
+    titleFontSize=14
 )
 
 st.altair_chart(chart, use_container_width=True)
