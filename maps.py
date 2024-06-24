@@ -5,6 +5,7 @@ import pydeck as pdk
 import altair as alt
 import pickle
 from datetime import datetime, timedelta
+from tqdm import tqdm
 
 
 data = pd.read_csv('listings_redux.csv')
@@ -233,7 +234,7 @@ airbnb_ids = filtered_df['listing_id'].unique()
 future_data = pd.DataFrame()
 
 if st.button("Predict"):
-    for airbnb_id in stqdm(airbnb_ids, desc="Predicting prices", total=len(airbnb_ids)):
+    for airbnb_id in tqdm(airbnb_ids, desc="Predicting prices", total=len(airbnb_ids)):
             airbnb_data = future_dates_df.copy()
             airbnb_data['airbnb_id'] = airbnb_id
             
