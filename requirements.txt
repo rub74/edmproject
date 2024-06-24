@@ -5,3 +5,4 @@ scikit-learn==1.5.0
 tqdm
 xgboost
 plotly
+matplotlib
