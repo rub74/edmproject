@@ -18,7 +18,6 @@ from sklearn.ensemble import GradientBoostingRegressor  # o el modelo que estés
 
 data = pd.read_csv('listings_redux.csv')
 
-
 st.header("AirBnB distribution in Madrid")
 
 midpoint = (np.average(data["latitude"]), np.average(data["longitude"]))
@@ -45,138 +44,124 @@ st.write(pdk.Deck(
     ],
 ))
 
-import streamlit as st
-import pandas as pd
-import numpy as np
-import pydeck as pdk
-import altair as alt
-
-# Leer los datos del archivo CSV
-data = pd.read_csv('listings_redux.csv')
-
-# Guardar cada columna en variables separadas
-latitude = data['latitude']
-longitude = data['longitude']
-neighbourhood_group = data['neighbourhood_group']
-neighbourhood = data['neighbourhood']
-price = data['price']
-minimum_nights = data['minimum_nights']
-availability_365 = data['availability_365']
-
-# Calcular el punto medio
-midpoint = (np.average(latitude), np.average(longitude))
-
-# Configurar y mostrar el mapa
-st.pydeck_chart(pdk.Deck(
-    map_style="mapbox://styles/mapbox/light-v9",
-    initial_view_state={
-        "latitude": midpoint[0],
-        "longitude": midpoint[1],
-        "zoom": 11,
-        "pitch": 50,
-    },
-    layers=[
-        pdk.Layer(
-            "HexagonLayer",
-            data=data,
-            get_position=["longitude", "latitude"],
-            auto_highlight=True,
-            radius=200,
-            extruded=True,
-            pickable=True,
-            elevation_scale=4,
-            elevation_range=[0, 1000],
-        ),
-    ],
-    tooltip={
-        "html": "<b>Neighbourhood Group:</b> {neighbourhood_group}<br/>"
-                "<b>Neighbourhood:</b> {neighbourhood}<br/>"
-                "<b>Price:</b> ${price}<br/>"
-                "<b>Minimum Nights:</b> {minimum_nights}<br/>"
-                "<b>Availability:</b> {availability_365} days",
-        "style": {
-            "backgroundColor": "steelblue",
-            "color": "white",
-            "fontSize": "14px",
-            "padding": "10px"
-        }
-    }
-))
-
+st.info("This 3D map visualizes the density of AirBnB listings across Madrid. Higher hexagons indicate areas with more listings.")
 
 st.header("Airbnb locations by minimum price")
 
-price = st.slider("Price per night", min(data['price']), max(data['price']))
+price = st.slider("Price per night", int(min(data['price'])), int(max(data['price'])))
 st.map(data.query("price >= @price")[["latitude", "longitude"]].dropna(how="any"))
 
-st.header("Most expensive neighbourhoods by cummulative price")
+st.info("This map shows the locations of AirBnB listings filtered by a minimum price. Use the slider to adjust the minimum price and see how it affects the distribution of listings.")
 
-cumulative_price_df = data[['neighbourhood', 'price']].groupby('neighbourhood')['price'].sum().reset_index()
-n = st.slider('Select the number of top neighbourhoods by price:', 1, len(cumulative_price_df), 5)
+st.header("Median price by neighborhood")
 
-top_n_df = cumulative_price_df.sort_values(by='price', ascending=False).head(n)
+# Calculate the median price by neighborhood
+price_stats_df = data.groupby('neighbourhood')['price'].median().reset_index()
+price_stats_df = price_stats_df.sort_values(by='price', ascending=False)
 
-# Bar chart with plt
-#fig, ax = plt.subplots()
-#ax.bar(top_n_df['neighbourhood'], top_n_df['price'], color='skyblue')
-#ax.set_xlabel('Neighbourhood')
-#ax.set_ylabel('Cumulative Price')
-#ax.set_title('Top Neighbourhoods by Cumulative Price')
+# Slider to select the number of neighborhoods to show
+n = st.slider('Select the number of neighborhoods:', 5, min(20, len(price_stats_df)), 10)
 
-#st.pyplot(fig)
+# Select the top n neighborhoods
+top_n_df = price_stats_df.head(n)
 
-fig2 = alt.Chart(top_n_df).mark_bar().encode(
-    x=alt.X('neighbourhood', sort=None),
-    y='price'
+# Create bar chart with Altair
+chart = alt.Chart(top_n_df).mark_bar().encode(
+    y=alt.Y('neighbourhood:N', sort='-x', title='Neighborhood'),
+    x=alt.X('price:Q', title='Median price per night (€)'),
+    color=alt.Color('price:Q', scale=alt.Scale(scheme='blueorange'), legend=None)
+).properties(
+    title='Median Price by Neighborhood',
+    width=600,
+    height=20 * n  # Adjust height based on the number of neighborhoods
 )
-st.write(fig2)
 
-st.header("Maximum and minimum price by neighbourhood")
+st.altair_chart(chart, use_container_width=True)
 
-# Neighbourhood selection
-neighbourhoods = data['neighbourhood'].unique()
-selected_neighbourhood = st.selectbox('Select a neighbourhood:', neighbourhoods)
+st.info("This bar chart compares the median prices across different neighborhoods. The bars are sorted from highest to lowest median price, allowing you to quickly identify the most expensive and least expensive areas.")
 
-# Filter data for the selected neighbourhood
+st.header("Price Analysis by Neighborhood")
+
+# Neighborhood selection
+neighbourhoods = sorted(data['neighbourhood'].unique())
+selected_neighbourhood = st.selectbox('Select a neighborhood:', neighbourhoods)
+
+# Filter data for the selected neighborhood
 filtered_df = data[data['neighbourhood'] == selected_neighbourhood]
 
-# Calculate max and min price
-max_price = filtered_df['price'].max()
-min_price = filtered_df['price'].min()
+# Calculate statistics
+max_price = int(filtered_df['price'].max())
+min_price = int(filtered_df['price'].min())
+median_price = int(filtered_df['price'].median())
+avg_price = int(filtered_df['price'].mean())
+count = len(filtered_df)
 
 # Display metrics
+col1, col2, col3 = st.columns(3)
+col1.metric(label="Maximum Price", value=f"{max_price}€")
+col1.metric(label="Minimum Price", value=f"{min_price}€")
+col2.metric(label="Median Price", value=f"{median_price}€")
+col2.metric(label="Average Price", value=f"{avg_price}€")
+col3.metric(label="Number of Properties", value=count)
+
+# Price distribution graph
+st.subheader(f"Price Distribution in {selected_neighbourhood}")
+chart = alt.Chart(filtered_df).mark_bar().encode(
+    alt.X('price', bin=alt.Bin(maxbins=30), title='Price (€)'),
+    y='count()',
+    tooltip=['count()', 'price']
+).properties(
+    width=600,
+    height=300
+)
+st.altair_chart(chart, use_container_width=True)
+
+st.info("This section provides a detailed price analysis for a selected neighborhood. It shows key statistics (max, min, median, average prices) and a histogram of price distribution, giving you a comprehensive view of pricing in that area.")
+
+st.header('Price Comparison Between Neighborhoods')
+
+# Neighborhood selection for comparison
 col1, col2 = st.columns(2)
-col1.metric(label=f"Maximum Price in {selected_neighbourhood}", value=f"{max_price}€")
-col2.metric(label=f"Minimum Price in {selected_neighbourhood}", value=f"{min_price}€")
+with col1:
+    neighbourhood1 = st.selectbox('Select the first neighborhood:', neighbourhoods, index=0)
+with col2:
+    neighbourhood2 = st.selectbox('Select the second neighborhood:', neighbourhoods, index=1)
 
-
-st.header('Price Comparison Between Neighbourhoods')
-
-# Neighbourhood selection
-neighbourhoods = data['neighbourhood'].unique()
-neighbourhood1 = st.selectbox('Select the first neighbourhood:', neighbourhoods, index=0)
-neighbourhood2 = st.selectbox('Select the second neighbourhood:', neighbourhoods, index=1)
-
-# Filter data for the selected neighbourhoods
+# Filter data for selected neighborhoods
 filtered_df1 = data[data['neighbourhood'] == neighbourhood1]
 filtered_df2 = data[data['neighbourhood'] == neighbourhood2]
 
-# Calculate max prices for the selected neighbourhoods
-max_price1 = filtered_df1['price'].max()
-max_price2 = filtered_df2['price'].max()
-min_price1 = filtered_df1['price'].min()
-min_price2 = filtered_df2['price'].min()
-# Calculate the price delta
-price_delta_max = max_price2 - max_price1
-price_delta_min = min_price2 - min_price1
-# Display metrics
+# Calculate statistics for both neighborhoods
+stats1 = filtered_df1['price'].agg(['max', 'min', 'median', 'mean']).apply(int)
+stats2 = filtered_df2['price'].agg(['max', 'min', 'median', 'mean']).apply(int)
+
+# Display comparative metrics
 col1, col2 = st.columns(2)
-col1.metric(label=f"Maximum Price in {neighbourhood1}", value=f"${max_price1}")
-col1.metric(label=f"Minimum Price in {neighbourhood1}", value=f"${min_price1}")
+for stat in ['max', 'min', 'median', 'mean']:
+    col1.metric(label=f"{stat.capitalize()} Price in {neighbourhood1}", value=f"{stats1[stat]}€")
+    delta = stats2[stat] - stats1[stat]
+    col2.metric(label=f"{stat.capitalize()} Price in {neighbourhood2}", value=f"{stats2[stat]}€", 
+                delta=f"{delta}€", delta_color="inverse")
 
-col2.metric(label=f"Maximum Price in {neighbourhood2}", value=f"${max_price2}", delta=float(price_delta_max), delta_color="inverse")
-col2.metric(label=f"Minimum Price in {neighbourhood2}", value=f"${min_price2}", delta=float(price_delta_min), delta_color="inverse")
+# Comparison graph
+comparison_data = pd.DataFrame({
+    'neighbourhood': [neighbourhood1, neighbourhood2],
+    'median_price': [stats1['median'], stats2['median']]
+})
 
+chart = alt.Chart(comparison_data).mark_bar().encode(
+    x='neighbourhood',
+    y='median_price',
+    color='neighbourhood',
+    tooltip=['neighbourhood', 'median_price']
+).properties(
+    width=400,
+    height=300,
+    title='Comparison of Median Prices'
+)
+st.altair_chart(chart, use_container_width=True)
+
+st.info("This comparison tool allows you to select two neighborhoods and compare their price statistics side by side. The bar chart visually represents the median prices, while the metrics show the difference in various price points between the two areas.")
 import pandas as pd
 import streamlit as st
 from datetime import datetime, timedelta
